@@ -1,6 +1,8 @@
 name: build_docker
 
 on:
+  push:
+    branches: [main]
   release:
     types: [created] 
   repository_dispatch:
