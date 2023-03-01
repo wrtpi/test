@@ -1,10 +1,15 @@
 name: build_docker
 
 on:
-  push:
-    branches: [main]
   release:
-    types: [created] # 表示在创建新的 Release 时触发
+    types: [created] 
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: true
+        default: 'false'
 
 jobs:
   build_docker:
@@ -15,8 +20,8 @@ jobs:
         uses: actions/checkout@v3
 
       - run: |
-          echo "本次构建的版本为：${GITHUB_REF_NAME} (但是这个变量目前上下文中无法获取到)"
-          echo 本次构建的版本为：${{ github.ref_name }}
+          echo "版本为：${GITHUB_REF_NAME} "
+          echo 版本为：${{ github.ref_name }}
           env
 
       - name: Set up QEMU
