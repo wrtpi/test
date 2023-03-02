@@ -1,69 +1,28 @@
-<script lang="ts" setup>
-import { computed } from 'vue'
-import { marked } from 'marked'
-import hljs from 'highlight.js'
-import { useBasicLayout } from '@/hooks/useBasicLayout'
-import { encodeHTML } from '@/utils/format'
+import axios, { type AxiosResponse } from 'axios'
 
-interface Props {
-  inversion?: boolean
-  error?: boolean
-  text?: string
-  loading?: boolean
-}
-
-const props = defineProps<Props>()
-
-const { isMobile } = useBasicLayout()
-
-const renderer = new marked.Renderer()
-
-renderer.html = (html) => {
-  return `<p>${encodeHTML(html)}</p>`
-}
-
-renderer.code = (code, language) => {
-  const validLang = !!(language && hljs.getLanguage(language))
-  const highlighted = validLang ? hljs.highlight(language, code).value : code
-  return `<pre><code class="hljs ${language}">${highlighted}</code></pre>`
-}
-
-marked.setOptions({ renderer })
-
-const wrapClass = computed(() => {
-  return [
-    'text-wrap',
-    'min-w-[20px]',
-    'rounded-md',
-    isMobile.value ? 'p-2' : 'p-3',
-    props.inversion ? 'bg-[#d2f9d1]' : 'bg-[#f4f6f8]',
-    props.inversion ? 'dark:bg-[#a1dc95]' : 'dark:bg-[#1e1e20]',
-    { 'text-red-500': props.error },
-  ]
+const service = axios.create({
+  baseURL: import.meta.env.VITE_GLOB_API_URL,
 })
 
-const text = computed(() => {
-  const value = props.text ?? ''
-  if (!props.inversion)
-    return marked(value)
-  return value
-})
-</script>
+service.interceptors.request.use(
+  (config) => {
+    return config
+  },
+  (error) => {
+    return Promise.reject(error.response)
+  },
+)
 
-<template>
-  <div class="text-black" :class="wrapClass">
-    <template v-if="loading">
-      <span class="dark:text-white w-[4px] h-[20px] block animate-blink" />
-    </template>
-    <template v-else>
-      <div class="leading-relaxed break-all">
-        <div v-if="!inversion" class="markdown-body" v-html="text" />
-        <div v-else class="whitespace-pre-wrap" v-text="text" />
-      </div>
-    </template>
-  </div>
-</template>
+service.interceptors.response.use(
+  (response: AxiosResponse): AxiosResponse => {
+    if (response.status === 200)
+      return response
 
-<style lang="less">
-@import url(./style.less);
-</style>
+    throw new Error(response.status.toString())
+  },
+  (error) => {
+    return Promise.reject(error)
+  },
+)
+
+export default service
